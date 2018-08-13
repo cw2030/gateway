@@ -1,4 +1,4 @@
-package main
+package gw
 
 import (
 	"encoding/binary"
@@ -41,7 +41,7 @@ func NewHeader() *Header {
 	}
 }
 
-func (h *Header) toString() string {
+func (h *Header) ToString() string {
 	return hex.EncodeToString(h.toBytes())
 }
 
@@ -86,7 +86,7 @@ type Body struct {
 	Attachment string `json:"atta"`
 }
 
-func (b *Body) toString() string {
+func (b *Body) ToString() string {
 	return ""
 }
 
@@ -109,12 +109,26 @@ type StringMessage struct {
 	body   *Body
 }
 
-func (m *StringMessage) Encode(message Message) []byte {
-	msg := m.header.toString() + m.body.toString()
-	return []byte(msg)
+func (m *StringMessage) Encode() []byte {
+	return []byte(m.ToString())
 }
 
-func (m *StringMessage) Decode(conn net.Conn) (interface{}, error) {
+func (m *StringMessage) Decode([]byte) interface{} {
+	panic("implement me")
+}
+
+func (m *StringMessage) ToString() string {
+	return m.header.ToString() + m.body.ToString()
+}
+
+type StringMessageCodec struct {
+}
+
+func (m *StringMessageCodec) Encode(message Message) []byte {
+	return message.Encode()
+}
+
+func (m *StringMessageCodec) Decode(conn net.Conn) (Message, error) {
 	headerBytes := make([]byte, headerLength)
 	_, err := io.ReadFull(conn, headerBytes)
 	if err != nil {
@@ -128,11 +142,8 @@ func (m *StringMessage) Decode(conn net.Conn) (interface{}, error) {
 	b := &Body{}
 	b.bytesTo(bodyBytes)
 
-	m.header = h
-	m.body = b
-	return m, nil
-}
-
-func (m *StringMessage) ToString() string {
-	return m.header.toString() + m.body.toString()
+	stringMsg := &StringMessage{}
+	stringMsg.header = h
+	stringMsg.body = b
+	return stringMsg, nil
 }

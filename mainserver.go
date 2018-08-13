@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"gateway/gw"
 	"github.com/henrylee2cn/teleport"
 	"time"
 )
@@ -18,12 +19,12 @@ func main() {
 		ListenPort: 9090,
 	})
 	srv.RouteCall(new(math))
-	srv.ListenAndServe()
+	//srv.ListenAndServe()
 
-	//select {
-	//case <-time.After(time.Second * 200):
-	//	fmt.Println("end")
-	//}
+	appConf := gw.AppConf{Network: "tcp4", ServerAddr: ":7722"}
+	app := gw.NewAppMgt(appConf)
+
+	app.Listen()
 
 }
 

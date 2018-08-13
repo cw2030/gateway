@@ -1,11 +1,12 @@
 /*
 表示每一个连接到服务端的连接工作者
 */
-package main
+package gw
 
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"net"
 	"time"
 )
@@ -21,6 +22,7 @@ type Connector struct {
 	writeChan      chan []byte
 	ctx            context.Context
 	cancelFunc     context.CancelFunc
+	key            []byte
 }
 
 func NewConnector(conn net.Conn, appMgt *AppMgt) *Connector {
@@ -33,6 +35,7 @@ func NewConnector(conn net.Conn, appMgt *AppMgt) *Connector {
 		handlerFunc:    appMgt.handlerFunc,
 		ctx:            ctx,
 		cancelFunc:     cancel,
+		key:            RandEncryptKey(16),
 	}
 }
 
@@ -48,7 +51,8 @@ func (connector *Connector) process() {
 			break
 		case <-connector.mgt.ctx.Done():
 			break
-		case msg, err := connector.messageCodec.Decode(connector.Conn):
+		default:
+			msg, err := connector.messageCodec.Decode(connector.Conn)
 			fmt.Println("ReadMsg:", msg, err)
 			connector.writeChan <- []byte("server:" + msg.ToString())
 		}
@@ -65,4 +69,14 @@ func (connector *Connector) write() {
 	case <-connector.mgt.ctx.Done():
 		break
 	}
+}
+
+func RandEncryptKey(size int) []byte {
+	kinds, result := []int{26, 65}, make([]byte, size)
+	rand.Seed(time.Now().UnixNano())
+	for i := 0; i < size; i++ {
+		scope, base := kinds[0], kinds[1]
+		result[i] = uint8(base + rand.Intn(scope))
+	}
+	return result
 }

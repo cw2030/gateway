@@ -1,4 +1,4 @@
-package main
+package gw
 
 type AppConf struct {
 	Network    string `yaml:"network"	comment:"Network; tcp, tcp4, tcp6, unix or unixpacket"`

@@ -1,4 +1,4 @@
-package main
+package gw
 
 import (
 	"context"
@@ -22,29 +22,31 @@ type AppMgt struct {
 type App interface {
 	Listen()
 	Dial(network string, remoteAddr string)
-	messageCodec(codec MessageCodec)
-	handler(handler Handler)
-	addFilter(filter Filter)
+	MessageCodec(codec MessageCodec)
+	Handler(handler Handler)
+	AddFilter(filter Filter)
 }
 
 func NewAppMgt(conf AppConf) *AppMgt {
 	ctx, cancel := context.WithCancel(context.Background())
+	defaultMsgCode := &StringMessageCodec{}
 	return &AppMgt{
 		ctx:        ctx,
 		cancelFunc: cancel,
 		conf:       conf,
+		msgCodec:   defaultMsgCode,
 	}
 }
 
-func (app *AppMgt) messageCodec(codec MessageCodec) {
+func (app *AppMgt) MessageCodec(codec MessageCodec) {
 	app.msgCodec = codec
 }
 
-func (app *AppMgt) handler(handler Handler) {
+func (app *AppMgt) Handler(handler Handler) {
 	app.handlerFunc = handler
 }
 
-func (app *AppMgt) addFilter(filter Filter) {
+func (app *AppMgt) AddFilter(filter Filter) {
 
 }
 
