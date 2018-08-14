@@ -15,12 +15,8 @@ func main() {
 		return
 	}
 	defer conn.Close()
-	h := appcodec.NewHeader()
-	h.ReqType = 1
-	h.MsgType = 1
-	h.EncryptType = 2
-	h.Priority = 5
-	h.Extend = 11
+	h := appcodec.NewSimpleHeader()
+	h.EncryptType = 1
 
 	b := appcodec.Body{}
 	b.BType = "1"
@@ -28,15 +24,18 @@ func main() {
 	b.SvrType = "login"
 	b.SvrName = "UserLogin"
 	b.Resource = "/user/login"
-	b.Content = "userName=test&password=123456789"
+	b.Content = "userName=test&password=1234"
 	b.Attachment = "NO"
-	msg := appcodec.StringMessage{h, &b}
-	conn.Write(msg.Encode())
+	msg := appcodec.SimpleMessage{h, &b}
+	bs := msg.Encode()
+	fmt.Println("send:", bs)
+	conn.Write(bs)
+
 	select {
 	case <-time.After(5 * time.Second):
 		fmt.Println("timer out for 5 secs")
 	default:
-		codec := appcodec.StringMessageCodec{}
+		codec := appcodec.SimpleMessageCodec{}
 		response, err := codec.Decode(conn)
 		if err != nil {
 			fmt.Println(err)

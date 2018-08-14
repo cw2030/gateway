@@ -24,11 +24,15 @@ func main() {
 
 	appConf := gw.AppConf{Network: "tcp4", ServerAddr: ":7722"}
 	app := gw.NewAppMgt(appConf)
-	codec := &appcodec.StringMessageCodec{}
+	//add Message codec
+	//codec := appcodec.SimpleMessageCodec{}
+	codec := appcodec.StringMessageCodec{}
+
+	//message handler
+	handler := appcodec.AppHandler{}
 	app.MessageCodec(codec)
-	var handler gw.Handler
-	handler = &appcodec.AppMessageHandler{}
 	app.Handler(handler)
+
 	app.Listen()
 
 }
