@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"gateway/appcodec"
 	"gateway/gw"
 	"github.com/henrylee2cn/teleport"
 	"time"
@@ -23,7 +24,11 @@ func main() {
 
 	appConf := gw.AppConf{Network: "tcp4", ServerAddr: ":7722"}
 	app := gw.NewAppMgt(appConf)
-
+	codec := &appcodec.StringMessageCodec{}
+	app.MessageCodec(codec)
+	var handler gw.Handler
+	handler = &appcodec.AppMessageHandler{}
+	app.Handler(handler)
 	app.Listen()
 
 }

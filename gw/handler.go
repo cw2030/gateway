@@ -1,5 +1,5 @@
 package gw
 
 type Handler interface {
-	HandleFunc(message Message) error
+	HandleFunc(connector *Connector, message Message, err error)
 }

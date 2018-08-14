@@ -4,13 +4,12 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"sync"
 	"time"
 )
 
 type AppMgt struct {
 	conf        AppConf
-	connectors  *sync.Map
+	connectors  map[interface{}]bool
 	msgCodec    MessageCodec
 	handlerFunc Handler
 	filters     []Filter
@@ -29,12 +28,11 @@ type App interface {
 
 func NewAppMgt(conf AppConf) *AppMgt {
 	ctx, cancel := context.WithCancel(context.Background())
-	defaultMsgCode := &StringMessageCodec{}
 	return &AppMgt{
 		ctx:        ctx,
 		cancelFunc: cancel,
 		conf:       conf,
-		msgCodec:   defaultMsgCode,
+		connectors: make(map[interface{}]bool, 20),
 	}
 }
 
@@ -67,7 +65,8 @@ func (app *AppMgt) Listen() {
 			continue
 		}
 		connector := NewConnector(conn, app)
-		app.connectors.LoadOrStore(connector, true)
+		//app.connectors.LoadOrStore(connector, true)
+		app.connectors[connector] = true
 		go connector.process()
 		netId := app.count.GetAndIncrement()
 		fmt.Printf("accepted client %s, time:%s id: %d, total: %d\n",
@@ -85,10 +84,5 @@ func (app *AppMgt) Dial(network string, remoteAddr string) {
 }
 
 func (app *AppMgt) getConnectorSize() int {
-	size := 0
-	app.connectors.Range(func(key, value interface{}) bool {
-		size++
-		return true
-	})
-	return size
+	return len(app.connectors)
 }

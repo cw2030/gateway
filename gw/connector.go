@@ -5,7 +5,6 @@ package gw
 
 import (
 	"context"
-	"fmt"
 	"math/rand"
 	"net"
 	"time"
@@ -53,8 +52,7 @@ func (connector *Connector) process() {
 			break
 		default:
 			msg, err := connector.messageCodec.Decode(connector.Conn)
-			fmt.Println("ReadMsg:", msg, err)
-			connector.writeChan <- []byte("server:" + msg.ToString())
+			connector.handlerFunc.HandleFunc(connector, msg, err)
 		}
 	}
 

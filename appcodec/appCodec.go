@@ -1,4 +1,4 @@
-package gw
+package appcodec
 
 import (
 	"encoding/binary"
@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"gateway/gw"
 	"io"
 	"net"
 )
@@ -105,12 +106,17 @@ func (b *Body) ToBytes() []byte {
 }
 
 type StringMessage struct {
-	header *Header
-	body   *Body
+	Header *Header
+	Body   *Body
 }
 
 func (m *StringMessage) Encode() []byte {
-	return []byte(m.ToString())
+	bs := m.Body.ToBytes()
+	m.Header.Length = uint16(len(bs))
+	total := make([]byte, 12+m.Header.Length)
+	copy(total, m.Header.toBytes())
+	copy(total[12:], bs)
+	return bs
 }
 
 func (m *StringMessage) Decode([]byte) interface{} {
@@ -118,21 +124,21 @@ func (m *StringMessage) Decode([]byte) interface{} {
 }
 
 func (m *StringMessage) ToString() string {
-	return m.header.ToString() + m.body.ToString()
+	return m.Header.ToString() + m.Body.ToString()
 }
 
 type StringMessageCodec struct {
 }
 
-func (m *StringMessageCodec) Encode(message Message) []byte {
+func (m *StringMessageCodec) Encode(message gw.Message) []byte {
 	return message.Encode()
 }
 
-func (m *StringMessageCodec) Decode(conn net.Conn) (Message, error) {
+func (m *StringMessageCodec) Decode(conn net.Conn) (gw.Message, error) {
 	headerBytes := make([]byte, headerLength)
 	_, err := io.ReadFull(conn, headerBytes)
 	if err != nil {
-		return nil, errors.New("read header message fail:" + err.Error())
+		return nil, errors.New("read Header message fail:" + err.Error())
 	}
 	h := &Header{}
 	h.bytesTo(headerBytes)
@@ -143,7 +149,7 @@ func (m *StringMessageCodec) Decode(conn net.Conn) (Message, error) {
 	b.bytesTo(bodyBytes)
 
 	stringMsg := &StringMessage{}
-	stringMsg.header = h
-	stringMsg.body = b
+	stringMsg.Header = h
+	stringMsg.Body = b
 	return stringMsg, nil
 }
