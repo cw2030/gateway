@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"gateway/appcodec"
 	"gateway/gw"
+	"github.com/cihub/seelog"
 	"github.com/henrylee2cn/teleport"
 	"time"
 )
@@ -14,15 +15,23 @@ var (
 	network = "tcp4"
 )
 
+func init() {
+	//D:/gowork3/src/gateway/
+	seelog.LoggerFromConfigAsFile("conf/seelog-main.xml")
+}
+
 func main() {
+	defer seelog.Flush()
 	srv := tp.NewPeer(tp.PeerConfig{
 		CountTime:  true,
 		ListenPort: 9090,
 	})
+
 	srv.RouteCall(new(math))
 	//srv.ListenAndServe()
 
 	appConf := gw.AppConf{Network: "tcp4", ServerAddr: ":7722"}
+	seelog.Info(appConf)
 	app := gw.NewAppMgt(appConf)
 	//add Message codec
 	//codec := appcodec.SimpleMessageCodec{}

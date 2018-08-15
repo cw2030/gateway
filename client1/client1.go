@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"gateway/appcodec"
+	"github.com/cihub/seelog"
 	"net"
 	"time"
 )
@@ -39,9 +40,9 @@ func main() {
 		codec := appcodec.StringMessageCodec{}
 		response, err := codec.Decode(conn)
 		if err != nil {
-			fmt.Println(err)
+			seelog.Error(err)
 		} else {
-			fmt.Println(response.ToString())
+			seelog.Info(response.ToString())
 		}
 
 	}

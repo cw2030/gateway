@@ -1,8 +1,8 @@
 package appcodec
 
 import (
-	"errors"
 	"gateway/gw"
+	"github.com/cihub/seelog"
 	"io"
 	"net"
 )
@@ -37,16 +37,24 @@ func (m StringMessageCodec) Encode(message gw.Message) []byte {
 }
 
 func (m StringMessageCodec) Decode(conn net.Conn) (gw.Message, error) {
+	defer func() {
+		if err := recover(); err != nil {
+			seelog.Error(err)
+		}
+	}()
 	headerBytes := make([]byte, headerLength)
 	_, err := io.ReadFull(conn, headerBytes)
 	if err != nil {
-		return nil, errors.New("read Header message fail:" + err.Error())
+		return nil, err
 	}
 	h := &Header{}
 	h.bytesTo(headerBytes)
 
 	bodyBytes := make([]byte, h.Length)
-	io.ReadFull(conn, bodyBytes)
+	_, err = io.ReadFull(conn, bodyBytes)
+	if err != nil {
+		return nil, err
+	}
 	b := &Body{}
 	b.bytesTo(bodyBytes)
 
