@@ -2,7 +2,7 @@ package appcodec
 
 import (
 	"encoding/binary"
-	"encoding/hex"
+	"encoding/json"
 )
 
 var (
@@ -37,7 +37,8 @@ func NewHeader() *Header {
 }
 
 func (h *Header) ToString() string {
-	return hex.EncodeToString(h.toBytes())
+	bs, _ := json.Marshal(h)
+	return string(bs)
 }
 
 func (h *Header) bytesTo(bs []byte) {

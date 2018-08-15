@@ -18,7 +18,8 @@ type Body struct {
 }
 
 func (b *Body) ToString() string {
-	return ""
+	bs, _ := json.Marshal(b)
+	return string(bs)
 }
 
 func (b *Body) bytesTo(bs []byte) {
