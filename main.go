@@ -5,8 +5,6 @@ import (
 	"gateway/appcodec"
 	"gateway/gw"
 	"github.com/cihub/seelog"
-	"github.com/henrylee2cn/teleport"
-	"time"
 )
 
 var (
@@ -16,27 +14,32 @@ var (
 )
 
 func init() {
-	//D:/gowork3/src/gateway/
-	seelog.LoggerFromConfigAsFile("conf/seelog-main.xml")
+	var err error
+	gw.Logger, err = seelog.LoggerFromConfigAsFile("seelog.xml")
+	if err != nil {
+		fmt.Println("Init Log Error:", err)
+	} else {
+		gw.Logger.Info("Init seelog success.")
+
+	}
 }
 
 func main() {
 	defer seelog.Flush()
-	srv := tp.NewPeer(tp.PeerConfig{
+	/*srv := tp.NewPeer(tp.PeerConfig{
 		CountTime:  true,
 		ListenPort: 9090,
-	})
+	})*/
 
-	srv.RouteCall(new(math))
+	//srv.RouteCall(new(math))
 	//srv.ListenAndServe()
 
-	appConf := gw.AppConf{Network: "tcp4", ServerAddr: ":7722"}
-	seelog.Info(appConf)
+	appConf := gw.ServerConf{Network: "tcp4", ServerAddr: ":7722"}
+	gw.Logger.Info(appConf)
 	app := gw.NewAppMgt(appConf)
 	//add Message codec
 	//codec := appcodec.SimpleMessageCodec{}
 	codec := appcodec.StringMessageCodec{}
-
 	//message handler
 	handler := appcodec.AppHandler{}
 	app.MessageCodec(codec)
@@ -44,23 +47,4 @@ func main() {
 
 	app.Listen()
 
-}
-
-type math struct {
-	tp.CallCtx
-}
-
-func (m *math) Add(args *[]int) (int, *tp.Rerror) {
-	if m.Query().Get("push_status") == "yes" {
-		m.Session().Push(
-			"/push/status",
-			fmt.Sprintf("%d numbers are being added...", len(*args)),
-		)
-		time.Sleep(time.Millisecond * 10)
-	}
-	var r int
-	for _, a := range *args {
-		r += a
-	}
-	return r, nil
 }

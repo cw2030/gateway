@@ -3,6 +3,7 @@ package appcodec
 import (
 	"encoding/json"
 	"fmt"
+	"gateway/gw"
 )
 
 type Body struct {
@@ -23,8 +24,10 @@ func (b *Body) ToString() string {
 }
 
 func (b *Body) bytesTo(bs []byte) {
-	json.Unmarshal(bs, b)
-	fmt.Println(b)
+	err := json.Unmarshal(bs, b)
+	if err != nil {
+		gw.Logger.Errorf("Body parse error:%s", bs)
+	}
 }
 
 func (b *Body) ToBytes() []byte {

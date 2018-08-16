@@ -5,7 +5,6 @@ package gw
 
 import (
 	"context"
-	"github.com/cihub/seelog"
 	"io"
 	"math/rand"
 	"net"
@@ -26,6 +25,7 @@ type Connector struct {
 	Key            []byte
 	NetId          int64
 	Closed         bool
+	Conf           ServerConf
 }
 
 func NewConnector(conn net.Conn, netId int64, server *TcpServer) *Connector {
@@ -41,6 +41,7 @@ func NewConnector(conn net.Conn, netId int64, server *TcpServer) *Connector {
 		Key:            RandEncryptKey(16),
 		NetId:          netId,
 		WriteChan:      make(chan []byte, 128),
+		Conf:           server.conf,
 	}
 }
 
@@ -51,23 +52,23 @@ func (connector *Connector) process() {
 	defer func() {
 		if err := recover(); err != nil {
 			connector.closeConn()
-			seelog.Error(err)
+			Logger.Error(err)
 		}
 	}()
 	go connector.write()
 	for {
 		select {
 		case <-connector.Ctx.Done():
-			seelog.Info("Close conn in Write when client error or exit.")
+			Logger.Info("Close conn in Write when client error or exit.")
 			return
 		case <-connector.Tcpserver.ctx.Done():
-			seelog.Info("Close conn when server exit.")
+			Logger.Info("Close conn when server exit.")
 			break
 		default:
 			msg, err := connector.Codec.Decode(connector.Conn)
 			if err != nil {
 				if err.Error() == "EOF" {
-					seelog.Infof("NetID：%d，Connector close:%T", connector.NetId, connector)
+					Logger.Infof("NetID：%d，Connector close:%T", connector.NetId, connector)
 					connector.Cancel()
 					continue
 				}
@@ -77,24 +78,25 @@ func (connector *Connector) process() {
 				case io.ErrClosedPipe:
 				case io.ErrShortBuffer:
 				case io.ErrShortWrite:
-					seelog.Error(err)
-					seelog.Infof("NetID：%d，Connector close:%T", connector.NetId, connector)
+					Logger.Error(err)
+					Logger.Infof("NetID：%d，Connector close:%T", connector.NetId, connector)
 					connector.Cancel()
 				default:
-					seelog.Error(err)
+					_, flag := err.(*net.OpError)
+					if flag {
+						connector.Cancel()
+					}
+					Logger.Error(err)
+					continue
 				}
 			}
 
-			if err != nil {
-				seelog.Error(err)
-				continue
-			}
 			if connector.MsgHandler != nil {
 				//设置最新活动时间
 				connector.LatestActivity = time.Now()
 				connector.MsgHandler.HandleFunc(connector, msg, err)
 			} else {
-				seelog.Errorf("Can't find MsgHandler.Msg:%s", msg)
+				Logger.Errorf("Can't find MsgHandler.Msg:%s", msg)
 			}
 		}
 	}
@@ -108,7 +110,7 @@ func (connector *Connector) write() {
 	defer func() {
 		if err := recover(); err != nil {
 			connector.closeConn()
-			seelog.Error(err)
+			Logger.Error(err)
 		}
 	}()
 	for {
@@ -116,16 +118,16 @@ func (connector *Connector) write() {
 		case bs := <-connector.WriteChan:
 			_, err := connector.Conn.Write(bs)
 			if err != nil {
-				seelog.Error(err)
+				Logger.Error(err)
 				connector.closeConn()
 				connector.Cancel()
 			}
 		case <-connector.Ctx.Done():
-			seelog.Info("Close conn in Write when client error or exit222.")
+			Logger.Info("Close conn in Write when client error or exit222.")
 			connector.closeConn()
 			return
 		case <-connector.Tcpserver.ctx.Done():
-			seelog.Info("Close conn when server exit.")
+			Logger.Info("Close conn when server exit.")
 			connector.closeConn()
 			return
 		}
@@ -141,7 +143,7 @@ func (connector *Connector) closeConn() {
 	connector.Closed = true
 	err := connector.Conn.Close()
 	if err != nil {
-		seelog.Error(err)
+		Logger.Error(err)
 	}
 }
 

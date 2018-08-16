@@ -10,7 +10,7 @@ import (
 )
 
 type TcpServer struct {
-	conf          AppConf
+	conf          ServerConf
 	connectors    *sync.Map
 	delConnectors *sync.Map
 	msgCodec      MessageCodec
@@ -21,6 +21,28 @@ type TcpServer struct {
 	count         Counter
 }
 
+var (
+	Logger    seelog.LoggerInterface
+	logConfig = `
+		<seelog type="sync">
+			<outputs formatid="main">
+				<console/>
+			</outputs>
+			<formats>
+				<format id="main" format="%Date/%Time [%LEV] [%File:%Line] [%Func] %Msg%n"/>
+			</formats>
+		</seelog>
+	`
+)
+
+func init() {
+	var err error
+	Logger, err = seelog.LoggerFromConfigAsBytes([]byte(logConfig))
+	if err != nil {
+		fmt.Println("seelog init error:", err)
+	}
+}
+
 type Server interface {
 	Listen()
 	Dial(network string, remoteAddr string)
@@ -29,7 +51,7 @@ type Server interface {
 	AddFilter(filter Filter)
 }
 
-func NewAppMgt(conf AppConf) *TcpServer {
+func NewAppMgt(conf ServerConf) *TcpServer {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &TcpServer{
 		ctx:           ctx,
@@ -57,7 +79,7 @@ func (s *TcpServer) Listen() {
 	addr := s.conf.ServerAddr
 	l, err := net.Listen(network, addr)
 	if err != nil {
-		fmt.Println("Listen fail ", network, addr)
+		Logger.Info("Listen fail ", network, addr)
 		return
 	}
 	defer l.Close()
@@ -68,7 +90,7 @@ func (s *TcpServer) Listen() {
 	for {
 		conn, err := l.Accept()
 		if err != nil {
-			seelog.Error(err)
+			Logger.Error(err)
 			continue
 		}
 		netId := s.count.GetAndIncrement()
@@ -76,7 +98,7 @@ func (s *TcpServer) Listen() {
 		//app.connectors.LoadOrStore(connector, true)
 		s.connectors.LoadOrStore(connector, true)
 		go connector.process()
-		seelog.Infof("accepted client %s, id: %d, total: %d\n",
+		Logger.Infof("accepted client %s, id: %d, total: %d\n",
 			conn.RemoteAddr(),
 			netId,
 			s.getConnectorSize())
@@ -119,23 +141,23 @@ func (s *TcpServer) checkConnectStatus() {
 		default:
 			s.connectors.Range(func(key, value interface{}) bool {
 				c := key.(*Connector)
-				seelog.Infof("Connector:%d, Closed:%T", c.NetId, c.Closed)
+				Logger.Debugf("Connector:%d, Closed:%T", c.NetId, c.Closed)
 				if c.Closed {
 					c.LatestActivity = time.Now()
 					s.delConnectors.Store(c, true)
-					seelog.Infof("remove connector from Connectors:%d", c.NetId)
+					Logger.Debugf("remove connector from Connectors:%d", c.NetId)
 				} else {
 					if time.Now().Sub(c.LatestActivity).Seconds() > 30 {
 						c.Cancel()
 						c.LatestActivity = time.Now()
 						s.delConnectors.Store(c, true)
-						seelog.Infof("remove not acitvity connector from Connectors:%d", c.NetId)
+						Logger.Debugf("remove not acitvity connector from Connectors:%d", c.NetId)
 					}
 				}
 				return true
 			})
 			if s.getConnectorSize() > 0 {
-				seelog.Infof("Current Used Connector have %d", s.getConnectorSize())
+				Logger.Debugf("Current Used Connector have %d", s.getConnectorSize())
 			}
 			time.Sleep(5 * time.Second)
 		}
@@ -146,7 +168,7 @@ func (s *TcpServer) checkConnectStatus() {
 func (s *TcpServer) delConnector() {
 	defer func() {
 		if err := recover(); err != nil {
-			seelog.Error(err)
+			Logger.Error(err)
 		}
 	}()
 	for {
@@ -160,12 +182,12 @@ func (s *TcpServer) delConnector() {
 				if time.Now().Sub(c.LatestActivity).Seconds() > 10 {
 					c.Reset()
 					s.delConnectors.Delete(c)
-					seelog.Infof("Clean Connector:%d", c.NetId)
+					Logger.Infof("Clean Connector:%d", c.NetId)
 				}
 				return true
 			})
 			if s.getDelConnectorSize() > 0 {
-				seelog.Infof("Current DelsConnector have %d", s.getDelConnectorSize())
+				Logger.Infof("Current DelsConnector have %d", s.getDelConnectorSize())
 			}
 			time.Sleep(10 * time.Second)
 		}

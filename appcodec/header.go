@@ -33,6 +33,10 @@ func NewHeader() *Header {
 	return &Header{ProtocolFlag: binary.BigEndian.Uint16(protocolFlag),
 		MainVersion:      mainVersion,
 		SecondaryVersion: secondaryVersion,
+		EncryptType:      Encrypt_None,
+		Priority:         0,
+		Extend:           0,
+		Length:           0,
 	}
 }
 
