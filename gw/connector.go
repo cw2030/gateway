@@ -30,6 +30,7 @@ type Connector struct {
 
 func NewConnector(conn net.Conn, netId int64, server *TcpServer) *Connector {
 	ctx, cancel := context.WithCancel(server.ctx)
+	key := getEncryptKey(server.conf.Encrypt)
 	return &Connector{Conn: conn,
 		Tcpserver:      server,
 		SinceNow:       time.Now(),
@@ -38,10 +39,10 @@ func NewConnector(conn net.Conn, netId int64, server *TcpServer) *Connector {
 		MsgHandler:     server.MsgHandler,
 		Ctx:            ctx,
 		Cancel:         cancel,
-		Key:            RandEncryptKey(16),
 		NetId:          netId,
 		WriteChan:      make(chan []byte, 128),
 		Conf:           server.conf,
+		Key:            key,
 	}
 }
 
@@ -168,7 +169,7 @@ func (connector *Connector) Reset() {
 /*
 按指定位数生成随机的密钥
 */
-func RandEncryptKey(size int) []byte {
+func RandAESEncryptKey(size int) []byte {
 	kinds, result := []int{26, 65}, make([]byte, size)
 	rand.Seed(time.Now().UnixNano())
 	for i := 0; i < size; i++ {
@@ -176,4 +177,21 @@ func RandEncryptKey(size int) []byte {
 		result[i] = uint8(base + rand.Intn(scope))
 	}
 	return result
+}
+
+func RandRSA2048EncryptKey() []byte {
+	result := make([]byte, 2048)
+	return result
+}
+
+func getEncryptKey(encryptType uint8) []byte {
+	switch encryptType {
+	case Encrypt_AES:
+		return RandAESEncryptKey(16)
+	case Encrypt_RSA2048:
+		return RandRSA2048EncryptKey()
+	default:
+		return nil
+
+	}
 }

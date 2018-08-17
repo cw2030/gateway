@@ -39,9 +39,11 @@ func main() {
 				} else {
 					seelog.Infof("Key:%s", resp.Body.Content)
 				}
+
 			case appcodec.Msg_type_Heartbeat:
 				seelog.Infof(resp.ToString())
 			}
+
 		}
 	}()
 	for {

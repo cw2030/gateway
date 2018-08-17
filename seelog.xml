@@ -1,0 +1,15 @@
+<seelog>
+    <outputs formatid="main">
+        <buffered size="10000" flushperiod="1000">
+            <rollingfile type="date" filename="main.log" datepattern="2006.01.02" maxrolls="30"/>
+        </buffered>
+        <filter levels="info">
+            <console/>
+        </filter>
+
+    </outputs>
+    <formats>
+        <format id="main" format="%Date %Time [%LEV] [%File:%Line] [%Func] %Msg%n"/>
+        <!--<format id="main" format="%Date/%Time [%LEV] %Msg%n"/>-->
+    </formats>
+</seelog>

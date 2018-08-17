@@ -3,6 +3,7 @@ package appcodec
 import (
 	"encoding/binary"
 	"encoding/json"
+	"gateway/gw"
 )
 
 var (
@@ -33,7 +34,7 @@ func NewHeader() *Header {
 	return &Header{ProtocolFlag: binary.BigEndian.Uint16(protocolFlag),
 		MainVersion:      mainVersion,
 		SecondaryVersion: secondaryVersion,
-		EncryptType:      Encrypt_None,
+		EncryptType:      gw.Encrypt_None,
 		Priority:         0,
 		Extend:           0,
 		Length:           0,
