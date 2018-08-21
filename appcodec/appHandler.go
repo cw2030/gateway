@@ -11,8 +11,7 @@ type AppHandler struct {
 
 func (AppHandler) HandleFunc(connector *gw.Connector, message gw.Message, err error) {
 	sm := message.(*StringMessage)
-	gw.Logger.Info("Header:", sm.Header.ToString())
-	gw.Logger.Infof("Body:%s", sm.Body.ToString())
+	gw.Logger.Debugf("Body:%s", sm.ToString())
 	switch sm.Header.MsgType {
 	case Msg_Type_Handshake:
 		connector.WriteChan <- NewHandShakeRespMsg(connector).Encode()
@@ -25,6 +24,7 @@ func (AppHandler) HandleFunc(connector *gw.Connector, message gw.Message, err er
 		}
 		connector.WriteChan <- NewHeatbeatRespMsg().Encode()
 	case Msg_Type_Login:
+
 	case Msg_Type_Busi:
 	default:
 

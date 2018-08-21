@@ -24,13 +24,15 @@ func main() {
 		for {
 			codec := appcodec.StringMessageCodec{}
 			response, err := codec.Decode(conn)
-
-			resp := response.(*appcodec.StringMessage)
-
 			if err != nil {
 				seelog.Error(err)
 				return
 			}
+			resp, ok := response.(*appcodec.StringMessage)
+			if !ok {
+				return
+			}
+
 			switch resp.Header.MsgType {
 			case appcodec.Msg_Type_Handshake:
 				key, err = hex.DecodeString(resp.Body.Content)
