@@ -1,9 +1,10 @@
-<seelog>
+<seelog minlevel="debug" maxlevel="error">
     <outputs formatid="main">
         <buffered size="10000" flushperiod="1000">
             <rollingfile type="date" filename="main.log" datepattern="2006.01.02" maxrolls="30"/>
         </buffered>
-        <filter levels="info">
+        <!-- levels:trace、debug、info、warn、error、critical-->
+        <filter levels="debug,info">
             <console/>
         </filter>
 

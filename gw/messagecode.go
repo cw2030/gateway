@@ -3,11 +3,11 @@ package gw
 import "net"
 
 type Message interface {
-	Encode() []byte
+	Encode(connector *Connector) []byte
 	Decode([]byte) interface{}
 	ToString() string
 }
 type MessageCodec interface {
-	Encode(message Message) []byte
-	Decode(conn net.Conn) (Message, error)
+	Encode(message Message, connector *Connector) []byte
+	Decode(conn net.Conn, connector *Connector) (Message, error)
 }

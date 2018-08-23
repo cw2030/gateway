@@ -5,8 +5,8 @@ package gw
 
 import (
 	"context"
+	"crypto/rand"
 	"io"
-	"math/rand"
 	"net"
 	"time"
 )
@@ -60,18 +60,17 @@ func (connector *Connector) process() {
 	for {
 		select {
 		case <-connector.Ctx.Done():
-			Logger.Info("Close conn in Write when client error or exit.")
+			Logger.Info("Read:Close conn in Write when client error or exit.")
 			return
 		case <-connector.Tcpserver.ctx.Done():
-			Logger.Info("Close conn when server exit.")
+			Logger.Info("Read:Close conn when server exit.")
 			break
 		default:
-			msg, err := connector.Codec.Decode(connector.Conn)
+			msg, err := connector.Codec.Decode(connector.Conn, connector)
 			if err != nil {
 				if err.Error() == "EOF" {
-					Logger.Infof("NetID：%d，Connector close:%T", connector.NetId, connector)
+					Logger.Error("NetID：%d，Connector close:%T", connector.NetId, connector)
 					connector.Cancel()
-					continue
 				}
 				switch err {
 				case io.EOF:
@@ -88,16 +87,16 @@ func (connector *Connector) process() {
 						connector.Cancel()
 					}
 					Logger.Error(err)
-					continue
 				}
+				continue
 			}
-
+			Logger.Debugf("Receive Message:%s", msg.ToString())
 			if connector.MsgHandler != nil {
 				//设置最新活动时间
 				connector.LatestActivity = time.Now()
 				connector.MsgHandler.HandleFunc(connector, msg, err)
 			} else {
-				Logger.Errorf("Can't find MsgHandler.Msg:%s", msg)
+				Logger.Errorf("Read:Can't find MsgHandler.Msg:%s", msg)
 			}
 		}
 	}
@@ -124,11 +123,11 @@ func (connector *Connector) write() {
 				connector.Cancel()
 			}
 		case <-connector.Ctx.Done():
-			Logger.Info("Close conn in Write when client error or exit222.")
+			Logger.Info("Write:Close conn in Write when client error or exit.")
 			connector.closeConn()
 			return
 		case <-connector.Tcpserver.ctx.Done():
-			Logger.Info("Close conn when server exit.")
+			Logger.Info("Write:Close conn when server exit.")
 			connector.closeConn()
 			return
 		}
@@ -170,13 +169,25 @@ func (connector *Connector) Reset() {
 按指定位数生成随机的密钥
 */
 func RandAESEncryptKey(size int) []byte {
-	kinds, result := []int{26, 65}, make([]byte, size)
+	var keySize int
+	switch keySize {
+	case 16:
+	case 24:
+	case 32:
+		keySize = size
+	default:
+		keySize = 16
+	}
+	key := make([]byte, keySize)
+	io.ReadFull(rand.Reader, key)
+	return key
+	/*kinds, result := []int{26, 65}, make([]byte, size)
 	rand.Seed(time.Now().UnixNano())
 	for i := 0; i < size; i++ {
 		scope, base := kinds[0], kinds[1]
 		result[i] = uint8(base + rand.Intn(scope))
 	}
-	return result
+	return result*/
 }
 
 func RandRSA2048EncryptKey() []byte {

@@ -3,8 +3,6 @@ package appcodec
 import (
 	"encoding/hex"
 	"gateway/gw"
-	"strconv"
-	"time"
 )
 
 func NewEmptyMsg() gw.Message {
@@ -36,6 +34,7 @@ func NewHandShakeRespMsg(connector *gw.Connector) gw.Message {
 	case gw.Encrypt_AES:
 		h.EncryptType = gw.Encrypt_AES
 		b.Content = hex.EncodeToString(connector.Key)
+		gw.Logger.Infof("Server Key:%s", b.Content)
 	case gw.Encrypt_RSA1024:
 		h.EncryptType = gw.Encrypt_RSA1024
 	case gw.Encrypt_RSA2048:
@@ -54,28 +53,25 @@ func NewHandShakeRespMsg(connector *gw.Connector) gw.Message {
 
 func NewHeatbeatReqMsg() gw.Message {
 	msg := &StringMessage{}
-	b := &Body{}
+	/*b := &Body{}*/
 	h := NewHeader()
 	h.ReqType = Request
 	h.MsgType = Msg_type_Heartbeat
 
-	b.Content = strconv.FormatInt(time.Now().Unix(), 10)
+	/*b.Content = strconv.FormatInt(time.Now().Unix(), 10)*/
 
 	msg.Header = h
-	msg.Body = b
+	msg.Body = nil
 	return msg
 }
 func NewHeatbeatRespMsg() gw.Message {
 	msg := &StringMessage{}
-	b := &Body{}
 	h := NewHeader()
 	h.ReqType = Response
 	h.MsgType = Msg_type_Heartbeat
 
-	b.Content = strconv.FormatInt(time.Now().Unix(), 10)
-
 	msg.Header = h
-	msg.Body = b
+	msg.Body = nil
 	return msg
 }
 

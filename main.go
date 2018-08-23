@@ -34,7 +34,7 @@ func main() {
 	//srv.RouteCall(new(math))
 	//srv.ListenAndServe()
 
-	appConf := gw.ServerConf{Network: "tcp4", ServerAddr: ":7722", Encrypt: gw.Encrypt_AES}
+	appConf := gw.ServerConf{Network: "tcp4", ServerAddr: ":7722", Encrypt: gw.Encrypt_AES, Zuul: "http://172.19.243.125:48181"}
 	gw.Logger.Info(appConf)
 	app := gw.NewAppMgt(appConf)
 	//add Message codec

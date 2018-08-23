@@ -13,7 +13,7 @@ type SimpleMessage struct {
 	Body   *Body
 }
 
-func (m *SimpleMessage) Encode() []byte {
+func (m *SimpleMessage) Encode(connector *gw.Connector) []byte {
 	bs := m.Body.ToBytes()
 	bodyLen := len(bs)
 	m.Header.BodyLength = uint16(bodyLen)
@@ -35,11 +35,11 @@ func (m *SimpleMessage) ToString() string {
 type SimpleMessageCodec struct {
 }
 
-func (m SimpleMessageCodec) Encode(message gw.Message) []byte {
-	return message.Encode()
+func (m SimpleMessageCodec) Encode(message gw.Message, connector *gw.Connector) []byte {
+	return message.Encode(connector)
 }
 
-func (m SimpleMessageCodec) Decode(conn net.Conn) (gw.Message, error) {
+func (m SimpleMessageCodec) Decode(conn net.Conn, connector *gw.Connector) (gw.Message, error) {
 	headerBytes := make([]byte, simpleMessageHeaderLength)
 	_, err := io.ReadFull(conn, headerBytes)
 	if err != nil {
@@ -52,7 +52,7 @@ func (m SimpleMessageCodec) Decode(conn net.Conn) (gw.Message, error) {
 	bodyBytes := make([]byte, h.BodyLength)
 	io.ReadFull(conn, bodyBytes)
 	b := &Body{}
-	b.bytesTo(bodyBytes)
+	b.BytesTo(bodyBytes)
 
 	stringMsg := &SimpleMessage{}
 	stringMsg.Header = h

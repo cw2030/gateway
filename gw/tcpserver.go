@@ -53,6 +53,10 @@ type Server interface {
 
 func NewAppMgt(conf ServerConf) *TcpServer {
 	ctx, cancel := context.WithCancel(context.Background())
+	if conf.IdleTime <= 0 {
+		conf.IdleTime = 300
+	}
+	Logger.Info("Server side configuration: ", conf)
 	return &TcpServer{
 		ctx:           ctx,
 		cancelFunc:    cancel,
@@ -134,6 +138,7 @@ func (s *TcpServer) checkConnectStatus() {
 			seelog.Error(err)
 		}
 	}()
+	idleTimeout := float64(s.conf.IdleTime)
 	for {
 		select {
 		case <-s.ctx.Done():
@@ -147,7 +152,7 @@ func (s *TcpServer) checkConnectStatus() {
 					s.delConnectors.Store(c, true)
 					Logger.Debugf("remove connector from Connectors:%d", c.NetId)
 				} else {
-					if time.Now().Sub(c.LatestActivity).Seconds() > 30 {
+					if time.Now().Sub(c.LatestActivity).Seconds() > idleTimeout {
 						c.Cancel()
 						c.LatestActivity = time.Now()
 						s.delConnectors.Store(c, true)

@@ -21,7 +21,7 @@ func main() {
 	b := appcodec.Body{}
 	b.BType = "1"
 	b.SessionId = "1234"
-	b.SvrType = "login"
+	b.ProtType = "login"
 	b.SvrName = "UserLogin"
 	b.Resource = "/user/login"
 	b.Content = "userName=test&password=1234"
